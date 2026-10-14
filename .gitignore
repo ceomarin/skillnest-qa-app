@@ -1,0 +1,39 @@
+# Entorno virtual
+venv/
+.venv/
+env/
+
+# Variables de entorno (secretos, nunca se sube)
+.env
+
+# Cachés y compilados de Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Archivos del sistema operativo y del editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+htmlcov/
+.coverage
+
+# development files
+.development/
+
+# thunder-cliente
+.thunder-tests/
+.thunder-client/
+
+# IA Tools
+[Cc][Ll][Aa][Uu][Dd][Ee].md
+[Vv][Ii][Ss][Ii][Oo][Nn].md
+docs/vision.md
+
+# Local status notes
+ESTADO.md
+logs/
