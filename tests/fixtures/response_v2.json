@@ -1,0 +1,38 @@
+{
+  "id": "v1_ChdUQlhRYW9yRUs1Vy1tdGtQdWJubDJROBIXVEJYUWFvckVLNVctbXRrUHVibmwyUTg",
+  "status": "completed",
+  "usage": {
+    "total_tokens": 36,
+    "total_input_tokens": 9,
+    "input_tokens_by_modality": [
+      {
+        "modality": "text",
+        "tokens": 9
+      }
+    ],
+    "total_cached_tokens": 0,
+    "total_output_tokens": 27,
+    "total_tool_use_tokens": 0,
+    "total_thought_tokens": 0
+  },
+  "created": "2026-10-14T23:50:37Z",
+  "updated": "2026-10-14T23:50:37Z",
+  "service_tier": "standard",
+  "steps": [
+    {
+      "signature": "EmAKXgFpFH0TY3yCmv3WLsns/TXLfnlqN8h0yXq56RzzjEJhj/eqWBXIYnH9vKm3USvbe3w2rpgC3mxYqks4fq/eKxNcidykfoqAyMRrB/TJXWnuc97RZ2kFV0boIhwpLYc=",
+      "type": "thought"
+    },
+    {
+      "content": [
+        {
+          "text": "**AI finds patterns in data to make predictions or decisions.** \n\n*(Or even shorter: **Data + Patterns = Predictions.**)*",
+          "type": "text"
+        }
+      ],
+      "type": "model_output"
+    }
+  ],
+  "object": "interaction",
+  "model": "gemini-3.5-flash-lite"
+}
