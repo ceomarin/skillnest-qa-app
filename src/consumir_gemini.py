@@ -1,57 +1,95 @@
-import requests
-import json
 import os
+
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Constantes
-URL_BASE = os.getenv("GEMINI_URL")
-API_KEY = os.getenv("GEMINI_API_KEY")
-MODELO = "gemini-3.5-flash-lite"
-PREGUNTA = "Explain how AI works in a few words"
+URL_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+MODELO_POR_DEFECTO = "gemini-3.5-flash-lite"
+TIMEOUT_SEGUNDOS = 30
 
-# funcion para crear headers y body de la peticion a la api de gemini
-def crear_headers_body(modelo, api_key, pregunta = "Explain how AI works in a few words"):
-    headers = {
-        "Content-Type": "application/json",
-        "x-goog-api-key": api_key
-    }
-    body = {
-        "model": modelo,
-        "input": pregunta
-    }
-    return headers, body
 
-# funcion que hace o envia la peticion a la api de gemini y devuelve la respuesta
-def obtener_respuesta(url,headers,body):
+def validar_pregunta(pregunta):
+    """Detiene el flujo si la pregunta no es texto o viene vacia."""
+    if not isinstance(pregunta, str) or not pregunta.strip():
+        raise ValueError("La pregunta no puede estar vacia")
+
+
+def leer_api_key():
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError(
+            "Falta GEMINI_API_KEY. Revisa que .env este en la raiz del proyecto "
+            "y que el nombre de la variable sea exacto."
+        )
+    return api_key
+
+
+def armar_peticion(pregunta, modelo=MODELO_POR_DEFECTO):
+    validar_pregunta(pregunta)
+    api_key = leer_api_key()
+    url = f"{URL_BASE}/{modelo}:generateContent"
+    headers = {"Content-Type": "application/json", "x-goog-api-key": api_key}
+    body = {"contents": [{"parts": [{"text": pregunta.strip()}]}]}
+    return url, headers, body
+
+
+def verificar_estado_http(codigo):
+    """Traduce los codigos de error HTTP mas comunes a mensajes accionables."""
+    if codigo in (401, 403):
+        raise RuntimeError(f"El servicio rechazo la credencial (HTTP {codigo}). Revisa GEMINI_API_KEY.")
+    if codigo == 429:
+        raise RuntimeError("Se excedio el limite de peticiones (HTTP 429). Espera un momento y reintenta.")
+    if codigo >= 400:
+        raise RuntimeError(
+            f"El servicio devolvio un error HTTP {codigo}. "
+            "Si es 400, revisa tambien el valor de GEMINI_API_KEY."
+        )
+
+
+def enviar_peticion(url, headers, body):
     try:
-        response = requests.post(url=url, headers=headers, json=body, timeout=30)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.Timeout:
-        raise RuntimeError("Error timed out")
-    except requests.exceptions.HTTPError as e:
-        raise RuntimeError(f"Gemini devolvió error HTTP {e.response.status_code}")
-    except requests.exceptions.RequestException:
-        raise RuntimeError("Error de red al llamar a Gemini")
-    except ValueError: # JSON inválido
-        raise RuntimeError("Resspuesta de Gemini no es un JSON válido")
+        respuesta = requests.post(url, headers=headers, json=body, timeout=TIMEOUT_SEGUNDOS)
+    except requests.exceptions.Timeout as error:
+        raise RuntimeError(f"El servicio no respondio en {TIMEOUT_SEGUNDOS} segundos.") from error
+    except requests.exceptions.ConnectionError as error:
+        raise RuntimeError("No se pudo conectar con el servicio. Revisa tu conexion e intenta de nuevo.") from error
+    except requests.exceptions.RequestException as error:
+        raise RuntimeError("La peticion al servicio fallo antes de recibir respuesta.") from error
 
-def procesar_respuesta(respuesta):
-    token = respuesta["usage"]["total_tokens"]
-    modelo = respuesta["model"]
-    texto = respuesta["steps"][1]["content"][0]["text"]
-    print(f"Total tokens used: {token}")
-    print(f"Model: {modelo}")
-    print(f"Text: {texto}")
+    verificar_estado_http(respuesta.status_code)
+
+    try:
+        return respuesta.json()
+    except requests.exceptions.JSONDecodeError as error:
+        raise RuntimeError("La respuesta del servicio no llego en formato JSON valido.") from error
+
+
+def extraer_texto(datos):
+    try:
+        return datos["candidates"][0]["content"]["parts"][0]["text"]
+    except (KeyError, IndexError, TypeError) as error:
+        raise RuntimeError(
+            f"La respuesta no trae el campo esperado ({type(error).__name__}: {error})."
+        ) from error
+
+
+def consultar_modelo(pregunta):
+    url, headers, body = armar_peticion(pregunta)
+    datos = enviar_peticion(url, headers, body)
+    return extraer_texto(datos)
+
 
 def main():
-    modelo = MODELO
-    pregunta = PREGUNTA
-    headers, body = crear_headers_body(modelo, API_KEY, pregunta)
-    respuesta = obtener_respuesta(URL_BASE, headers, body)
-    print(respuesta)
+    pregunta = "Explain how AI works in a few words"
+    try:
+        print(consultar_modelo(pregunta))
+    except (ValueError, RuntimeError) as error:
+        print("No se pudo completar la operacion:", error)
+        return 1
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
