@@ -74,10 +74,32 @@ def extraer_texto(datos):
             f"La respuesta no trae el campo esperado ({type(error).__name__}: {error})."
         ) from error
 
+# funcion para calcular los costos de la peticion, en base a la cantidad de tokens usados
+def calcular_costos(datos,precio_entrada,precio_salida):
+    uso = datos["usageMetadata"] 
+    """
+     {
+        "promptTokenCount": 14,
+        "candidatesTokenCount": 1,
+        "totalTokenCount": 15,
+        "promptTokensDetails": [
+            {
+                "modality": "TEXT",
+                "tokenCount": 14
+            }
+        ],
+        "serviceTier": "standard"
+    },
+    """
+    coste_entrada = uso["promptTokenCount"] * precio_entrada
+    coste_salida = uso["candidatesTokenCount"] * precio_salida
+    return coste_entrada + coste_salida 
 
 def consultar_modelo(pregunta):
     url, headers, body = armar_peticion(pregunta)
     datos = enviar_peticion(url, headers, body)
+    coste = calcular_costos(datos, 0.0000003, 0.0000025)  # ejemplo de precios por token
+    print(f"Coste de la peticion: ${coste:.6f} USD")
     return extraer_texto(datos)
 
 
