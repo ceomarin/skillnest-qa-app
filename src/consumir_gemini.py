@@ -1,5 +1,6 @@
 import os
 
+import time
 import requests
 from dotenv import load_dotenv
 
@@ -96,10 +97,21 @@ def calcular_costos(datos,precio_entrada,precio_salida):
     return coste_entrada + coste_salida 
 
 def consultar_modelo(pregunta):
-    url, headers, body = armar_peticion(pregunta)
-    datos = enviar_peticion(url, headers, body)
-    coste = calcular_costos(datos, 0.0000003, 0.0000025)  # ejemplo de precios por token
-    print(f"Coste de la peticion: ${coste:.6f} USD")
+    latencias = []
+    costo_total = 0.0
+    for i in range(4):
+        url, headers, body = armar_peticion(pregunta)
+        inicio =  time.perf_counter()
+        datos = enviar_peticion(url, headers, body)
+        fin = time.perf_counter()
+        latencia = fin - inicio
+        print(f"Latencia: {latencia:2f} segundos")
+        coste = calcular_costos(datos, 0.0000003, 0.0000025)  # ejemplo de precios por token
+        costo_total += coste
+        print(f"Coste de la peticion: ${coste:.6f} USD")
+        latencias.append(latencia)
+    promedio = sum(latencias) / len(latencias)
+    print(f"Latencia promedio: {promedio:.2f} s | Costo total: {costo_total:.6f} USD")
     return extraer_texto(datos)
 
 
