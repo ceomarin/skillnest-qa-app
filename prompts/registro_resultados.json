@@ -1,0 +1,20 @@
+{
+  "estructurar_hu": {
+    "exitos": 3,
+    "intentos": 3,
+    "fallos_formato": 0,
+    "errores_proveedor": 0
+  },
+  "diagnosticar_hu": {
+    "exitos": 3,
+    "intentos": 3,
+    "fallos_formato": 0,
+    "errores_proveedor": 0
+  },
+  "generar_casos": {
+    "exitos": 3,
+    "intentos": 3,
+    "fallos_formato": 0,
+    "errores_proveedor": 0
+  }
+}

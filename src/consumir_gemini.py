@@ -1,4 +1,6 @@
 import os
+import re
+import json
 
 import time
 import requests
@@ -27,12 +29,20 @@ def leer_api_key():
     return api_key
 
 
-def armar_peticion(pregunta, modelo=MODELO_POR_DEFECTO):
+def armar_peticion(pregunta, system_instruction,response_schema=None,modelo=MODELO_POR_DEFECTO):
     validar_pregunta(pregunta)
     api_key = leer_api_key()
     url = f"{URL_BASE}/{modelo}:generateContent"
     headers = {"Content-Type": "application/json", "x-goog-api-key": api_key}
-    body = {"contents": [{"parts": [{"text": pregunta.strip()}]}]}
+    body = {"systemInstruction": {
+    "parts":[{"text":system_instruction}]
+},"contents": [{"parts": [{"text": pregunta.strip()}]}]}
+
+    if response_schema is not None:
+        body["generationConfig"] = {
+            "responseMimeType":"application/json",
+            "responseSchema":response_schema
+        }
     return url, headers, body
 
 
@@ -96,11 +106,40 @@ def calcular_costos(datos,precio_entrada,precio_salida):
     coste_salida = uso["candidatesTokenCount"] * precio_salida
     return coste_entrada + coste_salida 
 
+def parsear_respuesta_json(texto,claves_rqueridas=None):
+    texto_limpio = texto.strip()
+    texto_limpio = re.sub(r"^```(?:json)?\s*", "", texto_limpio) 
+    texto_limpio = re.sub(r"\s*```$", "", texto_limpio)
+    try:
+        datos = json.loads(texto_limpio)
+    except json.JSONDecodeError:
+        raise ValueError("La repuesta del modelo no es JSON válido")
+    
+    if claves_rqueridas:
+        faltantes = [clave for clave in claves_rqueridas if clave not in datos]
+        if faltantes:
+            raise ValueError("La respuesta no tiene la estructura esperado")
+    return datos
+
+
+
+
 def consultar_modelo(pregunta):
+
+    response_schema = {
+        "type":"OBJECT",
+        "properties":{
+            "categoria":{"type":"STRING"},
+            "nivel":{"type":"NUMBER"},
+        },
+        "required":["categoria","nivel"]
+    }
+
+    system_instruction = "Eres un asistente amigable y respondes en máximo 6 palabras. Responde en un objeto json con clave 'categoria' y 'nivel' "
     latencias = []
     costo_total = 0.0
-    for i in range(4):
-        url, headers, body = armar_peticion(pregunta)
+    for i in range(1):
+        url, headers, body = armar_peticion(pregunta,system_instruction,response_schema=response_schema)
         inicio =  time.perf_counter()
         datos = enviar_peticion(url, headers, body)
         fin = time.perf_counter()
@@ -112,7 +151,10 @@ def consultar_modelo(pregunta):
         latencias.append(latencia)
     promedio = sum(latencias) / len(latencias)
     print(f"Latencia promedio: {promedio:.2f} s | Costo total: {costo_total:.6f} USD")
-    return extraer_texto(datos)
+    texto = extraer_texto(datos)
+    datos_formateados = parsear_respuesta_json(texto,["categoria","nivel"])
+    print(type(datos_formateados))
+    return datos_formateados
 
 
 def main():
