@@ -1,8 +1,8 @@
+import json
 import os
 import re
-import json
-
 import time
+
 import requests
 from dotenv import load_dotenv
 
@@ -29,19 +29,22 @@ def leer_api_key():
     return api_key
 
 
-def armar_peticion(pregunta, system_instruction,response_schema=None,modelo=MODELO_POR_DEFECTO):
+def armar_peticion(
+    pregunta, system_instruction, response_schema=None, modelo=MODELO_POR_DEFECTO
+):
     validar_pregunta(pregunta)
     api_key = leer_api_key()
     url = f"{URL_BASE}/{modelo}:generateContent"
     headers = {"Content-Type": "application/json", "x-goog-api-key": api_key}
-    body = {"systemInstruction": {
-    "parts":[{"text":system_instruction}]
-},"contents": [{"parts": [{"text": pregunta.strip()}]}]}
+    body = {
+        "systemInstruction": {"parts": [{"text": system_instruction}]},
+        "contents": [{"parts": [{"text": pregunta.strip()}]}],
+    }
 
     if response_schema is not None:
         body["generationConfig"] = {
-            "responseMimeType":"application/json",
-            "responseSchema":response_schema
+            "responseMimeType": "application/json",
+            "responseSchema": response_schema,
         }
     return url, headers, body
 
@@ -49,9 +52,13 @@ def armar_peticion(pregunta, system_instruction,response_schema=None,modelo=MODE
 def verificar_estado_http(codigo):
     """Traduce los codigos de error HTTP mas comunes a mensajes accionables."""
     if codigo in (401, 403):
-        raise RuntimeError(f"El servicio rechazo la credencial (HTTP {codigo}). Revisa GEMINI_API_KEY.")
+        raise RuntimeError(
+            f"El servicio rechazo la credencial (HTTP {codigo}). Revisa GEMINI_API_KEY."
+        )
     if codigo == 429:
-        raise RuntimeError("Se excedio el limite de peticiones (HTTP 429). Espera un momento y reintenta.")
+        raise RuntimeError(
+            "Se excedio el limite de peticiones (HTTP 429). Espera un momento y reintenta."
+        )
     if codigo >= 400:
         raise RuntimeError(
             f"El servicio devolvio un error HTTP {codigo}. "
@@ -61,20 +68,30 @@ def verificar_estado_http(codigo):
 
 def enviar_peticion(url, headers, body):
     try:
-        respuesta = requests.post(url, headers=headers, json=body, timeout=TIMEOUT_SEGUNDOS)
+        respuesta = requests.post(
+            url, headers=headers, json=body, timeout=TIMEOUT_SEGUNDOS
+        )
     except requests.exceptions.Timeout as error:
-        raise RuntimeError(f"El servicio no respondio en {TIMEOUT_SEGUNDOS} segundos.") from error
+        raise RuntimeError(
+            f"El servicio no respondio en {TIMEOUT_SEGUNDOS} segundos."
+        ) from error
     except requests.exceptions.ConnectionError as error:
-        raise RuntimeError("No se pudo conectar con el servicio. Revisa tu conexion e intenta de nuevo.") from error
+        raise RuntimeError(
+            "No se pudo conectar con el servicio. Revisa tu conexion e intenta de nuevo."
+        ) from error
     except requests.exceptions.RequestException as error:
-        raise RuntimeError("La peticion al servicio fallo antes de recibir respuesta.") from error
+        raise RuntimeError(
+            "La peticion al servicio fallo antes de recibir respuesta."
+        ) from error
 
     verificar_estado_http(respuesta.status_code)
 
     try:
         return respuesta.json()
     except requests.exceptions.JSONDecodeError as error:
-        raise RuntimeError("La respuesta del servicio no llego en formato JSON valido.") from error
+        raise RuntimeError(
+            "La respuesta del servicio no llego en formato JSON valido."
+        ) from error
 
 
 def extraer_texto(datos):
@@ -85,36 +102,39 @@ def extraer_texto(datos):
             f"La respuesta no trae el campo esperado ({type(error).__name__}: {error})."
         ) from error
 
-# funcion para calcular los costos de la peticion, en base a la cantidad de tokens usados
-def calcular_costos(datos,precio_entrada,precio_salida):
-    uso = datos["usageMetadata"] 
-    """
-     {
-        "promptTokenCount": 14,
-        "candidatesTokenCount": 1,
-        "totalTokenCount": 15,
-        "promptTokensDetails": [
-            {
-                "modality": "TEXT",
-                "tokenCount": 14
-            }
-        ],
-        "serviceTier": "standard"
-    },
-    """
-    coste_entrada = uso["promptTokenCount"] * precio_entrada
-    coste_salida = uso["candidatesTokenCount"] * precio_salida
-    return coste_entrada + coste_salida 
 
-def parsear_respuesta_json(texto,claves_rqueridas=None):
+# funcion para calcular los costos de la peticion, en base a la cantidad de tokens usados
+def calcular_costos(datos, precio_entrada, precio_salida):
+    """Calcula el costo en USD a partir de los tokens de usageMetadata.
+
+    Usa promptTokenCount y candidatesTokenCount, por ejemplo:
+    {"promptTokenCount": 14, "candidatesTokenCount": 1, "totalTokenCount": 15}
+    """
+    try:
+        uso = datos["usageMetadata"]
+        tokens_entrada = uso["promptTokenCount"]
+        tokens_salida = uso["candidatesTokenCount"]
+    except (KeyError, TypeError) as error:
+        raise RuntimeError(
+            "La respuesta no trae el consumo de tokens (usageMetadata)."
+        ) from error
+    coste_entrada = tokens_entrada * precio_entrada
+    coste_salida = tokens_salida * precio_salida
+    return coste_entrada + coste_salida
+
+
+def parsear_respuesta_json(texto, claves_rqueridas=None):
     texto_limpio = texto.strip()
-    texto_limpio = re.sub(r"^```(?:json)?\s*", "", texto_limpio) 
+    texto_limpio = re.sub(r"^```(?:json)?\s*", "", texto_limpio)
     texto_limpio = re.sub(r"\s*```$", "", texto_limpio)
     try:
         datos = json.loads(texto_limpio)
     except json.JSONDecodeError:
         raise ValueError("La repuesta del modelo no es JSON válido")
-    
+
+    if not isinstance(datos, dict):
+        raise ValueError("La respuesta del modelo no es un objeto JSON.")
+
     if claves_rqueridas:
         faltantes = [clave for clave in claves_rqueridas if clave not in datos]
         if faltantes:
@@ -122,39 +142,30 @@ def parsear_respuesta_json(texto,claves_rqueridas=None):
     return datos
 
 
-
-
 def consultar_modelo(pregunta):
 
     response_schema = {
-        "type":"OBJECT",
-        "properties":{
-            "categoria":{"type":"STRING"},
-            "nivel":{"type":"NUMBER"},
+        "type": "OBJECT",
+        "properties": {
+            "categoria": {"type": "STRING"},
+            "nivel": {"type": "NUMBER"},
         },
-        "required":["categoria","nivel"]
+        "required": ["categoria", "nivel"],
     }
 
     system_instruction = "Eres un asistente amigable y respondes en máximo 6 palabras. Responde en un objeto json con clave 'categoria' y 'nivel' "
-    latencias = []
-    costo_total = 0.0
-    for i in range(1):
-        url, headers, body = armar_peticion(pregunta,system_instruction,response_schema=response_schema)
-        inicio =  time.perf_counter()
-        datos = enviar_peticion(url, headers, body)
-        fin = time.perf_counter()
-        latencia = fin - inicio
-        print(f"Latencia: {latencia:2f} segundos")
-        coste = calcular_costos(datos, 0.0000003, 0.0000025)  # ejemplo de precios por token
-        costo_total += coste
-        print(f"Coste de la peticion: ${coste:.6f} USD")
-        latencias.append(latencia)
-    promedio = sum(latencias) / len(latencias)
-    print(f"Latencia promedio: {promedio:.2f} s | Costo total: {costo_total:.6f} USD")
+    url, headers, body = armar_peticion(
+        pregunta, system_instruction, response_schema=response_schema
+    )
+    inicio = time.perf_counter()
+    datos = enviar_peticion(url, headers, body)
+    fin = time.perf_counter()
+    latencia = fin - inicio
+    print(f"Latencia: {latencia:2f} segundos")
+    coste = calcular_costos(datos, 0.0000003, 0.0000025)  # ejemplo de precios por token
+    print(f"Coste de la peticion: ${coste:.6f} USD")
     texto = extraer_texto(datos)
-    datos_formateados = parsear_respuesta_json(texto,["categoria","nivel"])
-    print(type(datos_formateados))
-    return datos_formateados
+    return parsear_respuesta_json(texto, ["categoria", "nivel"])
 
 
 def main():

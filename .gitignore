@@ -49,5 +49,5 @@ logs/
 src/consumir_gemini_mvp.py
 tests/test_consumir_gemini_mvp.py
 evaluacion/
-docs/decision-arquitectura-borrador.md
-
+/test_consumir_gemini_mvp.py
+docs/gates-oraculos/

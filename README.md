@@ -1,27 +1,89 @@
-# Plantilla de repositorio base — Especialización en Desarrollo con IA Generativa (Accenture)
+# skillnest-qa-app
 
-Esta es la estructura base que vas a usar como punto de partida para tu proyecto en este programa. Es la misma estructura que vas a ir ampliando bloque a bloque, hasta llegar a la aplicación completa que entregas en el Gate 3.
+Miniaplicación en Python que consume la API de Gemini (`generateContent`) para estructurar y analizar historias de usuario con salida JSON validada. Es el proyecto del Módulo 1 de la *Especialización en Desarrollo con IA Generativa*.
 
-## Cómo empezar
+## Qué hace
 
-Estos pasos se completan de forma progresiva a lo largo de la Unidad U1.2, no todos el mismo día:
+- Valida la entrada, arma la petición y la envía a Gemini por REST con `requests`.
+- Maneja errores de red, timeouts y errores HTTP (401, 403, 429 y otros) con mensajes accionables, sin exponer la clave.
+- Extrae el texto de la respuesta, lo parsea como JSON y valida las claves esperadas.
+- Calcula la latencia y el costo de cada consulta a partir de `usageMetadata`.
+- Incluye un banco de prompts (`estructurar_hu`, `diagnosticar_hu`, `generar_casos`) con su esquema de salida y una prueba de consistencia.
 
-1. Descarga este archivo comprimido (adjunto en la plataforma) y descomprímelo en tu computador. Inicializa el control de versiones sobre esa carpeta y registra tu primer commit con esta estructura base, tal como llegó, antes de modificar nada.
-2. Crea tu entorno virtual de Python (por ejemplo, con `venv`) y actívalo.
-3. Instala las dependencias que necesites y regístralas en `requirements.txt` (al inicio puede estar vacío o con muy pocas).
-4. Copia `.env.example` a un archivo nuevo llamado `.env`, y completa ahí tus credenciales reales (llaves de API, tokens). El archivo `.env` nunca se sube al repositorio: ya está excluido en `.gitignore`.
+El modelo elegido es `gemini-3.5-flash-lite`. La comparación de candidatos y la justificación están en [docs/decision-arquitectura.md](docs/decision-arquitectura.md).
 
-## Estructura de carpetas
+## Requisitos
 
-- `src/` : todo el código fuente de tu proyecto va aquí.
-- `docs/` : documentación técnica del proyecto (diagramas, decisiones de arquitectura, notas).
-- `tests/` : pruebas de tu código (las vas a usar más adelante en el programa, cuando el proyecto lo requiera).
-- `requirements.txt` : dependencias de Python de tu proyecto, para que cualquier otra persona pueda reconstruir tu entorno con un solo comando.
-- `.env.example` : plantilla de las variables de entorno que tu proyecto necesita, sin valores reales. Tu archivo `.env` real (con tus credenciales) nunca se commitea.
-- `.gitignore` : le dice a Git qué archivos y carpetas ignorar (entre ellos, tu entorno virtual y tu archivo `.env`).
+- Python 3.13
+- Una llave de API de Gemini
 
-## Reglas que se mantienen durante todo el programa
+## Instalación
 
-- Ningún secreto (contraseña, llave de API, token) va escrito directamente en el código ni en ningún archivo que se suba al repositorio.
-- Cada proyecto nuevo tiene su propio entorno virtual: no se comparten dependencias entre proyectos distintos.
-- Todo el trabajo que se entrega en este programa vive en un repositorio de GitHub, sin excepción.
+```bash
+python -m venv .venv
+.venv\Scripts\activate            # Windows (en Linux/macOS: source .venv/bin/activate)
+pip install -r requirements.txt
+```
+
+Para desarrollo (`ruff`, `mypy`, `pytest`): `pip install -r requirements-dev.txt`.
+
+## Configuración
+
+Copia `.env.example` a `.env` y reemplaza el valor ficticio por tu llave real:
+
+```bash
+copy .env.example .env            # Windows (en Linux/macOS: cp .env.example .env)
+```
+
+| Variable | Para qué sirve |
+|---|---|
+| `GEMINI_API_KEY` | Llave de API de Gemini. Se envía en el header `x-goog-api-key` |
+
+El archivo `.env` está en `.gitignore` y nunca se sube al repositorio.
+
+## Uso
+
+```bash
+python src/consumir_gemini.py
+```
+
+Hace **una llamada real** a la API. Si todo sale bien, imprime la latencia, el costo y el resultado:
+
+```text
+Latencia: 2.062698 segundos
+Coste de la peticion: $0.000046 USD
+{'categoria': 'tecnologia', 'nivel': 1}
+```
+
+Si algo falla (clave ausente o inválida, sin red, límite de peticiones), muestra un mensaje y termina con código 1.
+
+### Banco de prompts
+
+```bash
+python prompts/test_consistencia.py
+```
+
+Ejecuta cada prompt del banco 3 veces contra la API real (9 llamadas, consumen cuota) y guarda el resultado en `prompts/registro_resultados.json`. Mide que la salida sea JSON con las claves esperadas; **no evalúa la calidad del contenido**.
+
+## Estructura
+
+| Ruta | Contenido |
+|---|---|
+| `src/consumir_gemini.py` | Cliente de la API y flujo principal |
+| `prompts/banco.py` | Prompts, esquemas de salida y ejemplos sintéticos |
+| `prompts/test_consistencia.py` | Prueba de consistencia contra la API real |
+| `prompts/registro_resultados.json` | Último resultado de la prueba |
+| `docs/` | Decisión de arquitectura, diagrama y evidencias |
+| `tests/` | Reservado para pruebas automáticas |
+| `requirements.txt` | Dependencias de ejecución, con versiones fijadas |
+| `requirements-dev.txt` | Dependencias de desarrollo |
+
+## Seguridad
+
+- Ningún secreto va en el código ni en archivos versionados.
+- Los ejemplos y datos de prueba son sintéticos: el repositorio es público.
+
+## Convenciones
+
+- Commits con [Conventional Commits](https://www.conventionalcommits.org/): `tipo(alcance): descripción`, por ejemplo `docs: add architecture diagram`.
+- Un commit por cambio lógico.
