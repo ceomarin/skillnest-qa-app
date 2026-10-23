@@ -87,3 +87,8 @@ Ejecuta cada prompt del banco 3 veces contra la API real (9 llamadas, consumen c
 
 - Commits con [Conventional Commits](https://www.conventionalcommits.org/): `tipo(alcance): descripción`, por ejemplo `docs: add architecture diagram`.
 - Un commit por cambio lógico.
+
+## Registro del ensayo de instalación limpia
+ 
+- Fecha: 2026-10-23
+- Resultado tras la corrección: el proyecto corre sin intervención manual
