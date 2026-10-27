@@ -49,42 +49,33 @@ def armar_peticion(
     return url, headers, body
 
 
-def verificar_estado_http(codigo):
-    """Traduce los codigos de error HTTP mas comunes a mensajes accionables."""
-    if codigo in (401, 403):
-        raise RuntimeError(
-            f"El servicio rechazo la credencial (HTTP {codigo}). Revisa GEMINI_API_KEY."
-        )
-    if codigo == 429:
-        raise RuntimeError(
-            "Se excedio el limite de peticiones (HTTP 429). Espera un momento y reintenta."
-        )
-    if codigo >= 400:
-        raise RuntimeError(
-            f"El servicio devolvio un error HTTP {codigo}. "
-            "Si es 400, revisa tambien el valor de GEMINI_API_KEY."
-        )
-
-
 def enviar_peticion(url, headers, body):
     try:
         respuesta = requests.post(
             url, headers=headers, json=body, timeout=TIMEOUT_SEGUNDOS
         )
-    except requests.exceptions.Timeout as error:
-        raise RuntimeError(
-            f"El servicio no respondio en {TIMEOUT_SEGUNDOS} segundos."
-        ) from error
-    except requests.exceptions.ConnectionError as error:
-        raise RuntimeError(
-            "No se pudo conectar con el servicio. Revisa tu conexion e intenta de nuevo."
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as error:
+        raise TimeoutError(
+            "No se pudo contactar al proveedor. Puede ser momentaneo."
         ) from error
     except requests.exceptions.RequestException as error:
         raise RuntimeError(
             "La peticion al servicio fallo antes de recibir respuesta."
         ) from error
 
-    verificar_estado_http(respuesta.status_code)
+    codigo = respuesta.status_code
+    if codigo in (401, 403):
+        raise ValueError(
+            f"El servicio rechazo la credencial (HTTP {codigo}). Revisa GEMINI_API_KEY."
+        )
+    if codigo == 429 or codigo >= 500:
+        segundos = respuesta.headers.get("Retry-After")
+        sufijo = f" Reintentar en {segundos}s." if segundos else ""
+        raise TimeoutError(
+            f"El proveedor no pudo procesar la peticion (HTTP {codigo}).{sufijo}"
+        )
+    if codigo >= 400:
+        raise RuntimeError(f"El servicio devolvio un error HTTP {codigo}.")
 
     try:
         return respuesta.json()
@@ -153,7 +144,7 @@ def consultar_modelo(pregunta):
         "required": ["categoria", "nivel"],
     }
 
-    system_instruction = "Eres un asistente amigable y respondes en máximo 6 palabras. Responde en un objeto json con clave 'categoria' y 'nivel' "
+    system_instruction = "Eres un asistente amigable y respondes en máximo 10 palabras. Responde en un objeto json con clave 'categoria' y 'nivel' "
     url, headers, body = armar_peticion(
         pregunta, system_instruction, response_schema=response_schema
     )
@@ -169,10 +160,10 @@ def consultar_modelo(pregunta):
 
 
 def main():
-    pregunta = "Explain how AI works in a few words"
+    pregunta = "Cual es la Capital de Francia?"
     try:
         print(consultar_modelo(pregunta))
-    except (ValueError, RuntimeError) as error:
+    except (ValueError, RuntimeError, TimeoutError) as error:
         print("No se pudo completar la operacion:", error)
         return 1
     return 0
