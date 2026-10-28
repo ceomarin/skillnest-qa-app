@@ -92,3 +92,14 @@ Ejecuta cada prompt del banco 3 veces contra la API real (9 llamadas, consumen c
  
 - Fecha: 2026-10-23
 - Resultado tras la corrección: el proyecto corre sin intervención manual
+
+## Registro del ensayo de rate limit
+ 
+- Fecha: 2026-10-27
+- Modelo: `gemini-3.5-flash-lite` (nivel gratuito; límite del proyecto en AI Studio: 15 peticiones por minuto)
+- Peticiones enviadas: 20
+- Petición donde apareció el primer 429: la número 16 (`Respuesta 15`)
+- Errores del proveedor: 11 respuestas 429 y ninguna 503 (confirmado en el panel de uso de AI Studio)
+- Esperas observadas: 1.9s, 2.0s, 4.0s, 2.0s, 3.9s, 1.8s, 3.7s, 1.9s (backoff exponencial con jitter, correcto)
+- Costo total del ensayo: $0.001570
+- Resultado: 17 peticiones terminaron con éxito (2 de ellas tras reintentar) y 3 fallaron definitivamente tras 3 intentos (respuestas 16, 17 y 18)
