@@ -103,3 +103,34 @@ Ejecuta cada prompt del banco 3 veces contra la API real (9 llamadas, consumen c
 - Esperas observadas: 1.9s, 2.0s, 4.0s, 2.0s, 3.9s, 1.8s, 3.7s, 1.9s (backoff exponencial con jitter, correcto)
 - Costo total del ensayo: $0.001570
 - Resultado: 17 peticiones terminaron con éxito (2 de ellas tras reintentar) y 3 fallaron definitivamente tras 3 intentos (respuestas 16, 17 y 18)
+
+## Registro de Pipeline_texto aplicado a salidas reales
+ 
+- Fecha: 2026-10-28
+
+```bash
+-- Primera Ronda de consultas 
+Operación: 5 tokens de entrada, 550 de salida, costo estimado: $0.001377 (acumulado: $0.001377)
+[Caso 1] Coincidencia texto crudo: 85.7%
+[Caso 1] Coincidencia texto procesado: 100.0%
+Operación: 9 tokens de entrada, 456 de salida, costo estimado: $0.001143 (acumulado: $0.002519)
+[Caso 2] Coincidencia texto crudo: 78.6%
+[Caso 2] Coincidencia texto procesado: 78.6%
+Operación: 8 tokens de entrada, 9 de salida, costo estimado: $0.000025 (acumulado: $0.002544)
+[Caso 3] Coincidencia texto crudo: 83.3%
+[Caso 3] Coincidencia texto procesado: 100.0%
+(.venv) 
+-- Segunda Ronda de consultas 
+Operación: 9 tokens de entrada, 355 de salida, costo estimado: $0.000890 (acumulado: $0.000890)
+[Caso 1] Coincidencia texto crudo: 64.3%
+[Caso 1] Coincidencia texto procesado: 78.6%
+Operación: 9 tokens de entrada, 663 de salida, costo estimado: $0.001660 (acumulado: $0.002550)
+[Caso 2] Coincidencia texto crudo: 76.5%
+[Caso 2] Coincidencia texto procesado: 82.4%
+Operación: 8 tokens de entrada, 586 de salida, costo estimado: $0.001467 (acumulado: $0.004018)
+[Caso 3] Coincidencia texto crudo: 75.0%
+[Caso 3] Coincidencia texto procesado: 87.5%
+(.venv) 
+```
+
+
