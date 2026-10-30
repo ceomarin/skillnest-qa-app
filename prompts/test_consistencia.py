@@ -13,16 +13,11 @@ from pathlib import Path
 
 CARPETA = Path(__file__).resolve().parent
 sys.path.insert(0, str(CARPETA))
-sys.path.insert(0, str(CARPETA.parent / "src"))
+sys.path.insert(0, str(CARPETA.parent))
 
 from banco import BANCO_DE_PROMPTS
-
-from consumir_gemini import (
-    armar_peticion,
-    enviar_peticion,
-    extraer_texto,
-    parsear_respuesta_json,
-)
+from cliente import consultar_modelo
+from src.consumir_gemini import parsear_respuesta_json
 
 INTENTOS = 3
 PAUSA_SEGUNDOS = 2
@@ -39,12 +34,11 @@ def probar_prompt(prompt):
     }
     for intento in range(1, INTENTOS + 1):
         try:
-            url, headers, body = armar_peticion(
+            texto = consultar_modelo(
                 prompt["ejemplo_usuario"],
                 prompt["system_instruction"],
                 prompt.get("response_schema"),
             )
-            texto = extraer_texto(enviar_peticion(url, headers, body))
             parsear_respuesta_json(texto, prompt["claves_esperadas"])
             resultado["exitos"] += 1
         except ValueError as error:

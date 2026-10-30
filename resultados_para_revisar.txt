@@ -1,0 +1,10 @@
+¿Se pueden probar todas las combinaciones de entrada de un sistema? 0.20
+¿Qué es una historia de usuario? 0.26
+¿Qué es la partición de equivalencia? 0.29
+¿Qué es la prueba de regresión? 0.35
+¿Qué es la Definition of Done? 0.37
+¿Cuáles son los niveles de prueba del ISTQB? 0.69
+¿Cuántos principios del testing define el ISTQB? 0.71
+¿Qué código HTTP indica que el cliente superó el límite de solicitudes? 0.75
+¿Qué código HTTP indica una credencial inválida? 0.76
+¿El testing puede demostrar que un sistema no tiene defectos? 0.84

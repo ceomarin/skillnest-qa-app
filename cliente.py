@@ -74,9 +74,9 @@ def registrar_costo(respuesta: dict) -> float:
     )
     return costo_estimado
 
-def consultar_modelo(pregunta: str,system_instruction: str = "",) -> str:
+def consultar_modelo(pregunta: str,system_instruction: str = "",response_schema: dict | None = None,) -> str:
     """Envia la pregunta a Gemini con reintentos y devuelve el texto de la respuesta."""
-    url, headers, body = armar_peticion(pregunta, system_instruction)
+    url, headers, body = armar_peticion(pregunta, system_instruction,response_schema)
     try:
         respuesta = con_reintento(lambda: enviar_peticion(url, headers, body))
     except TimeoutError as error:

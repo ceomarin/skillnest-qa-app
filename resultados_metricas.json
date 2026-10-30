@@ -1,0 +1,142 @@
+[
+  {
+    "consulta": "¿Qué es una historia de usuario?",
+    "respuesta": "Una historia de usuario es una descripción breve y simple de una funcionalidad del software contada desde la perspectiva del usuario final y enfocada en el valor que esta le aporta.",
+    "precision": 0.1935483870967742,
+    "cobertura": 0.4,
+    "f1": 0.26086956521739135
+  },
+  {
+    "consulta": "¿Qué código HTTP indica una credencial inválida?",
+    "respuesta": "El código HTTP que indica una credencial inválida es el 401 Unauthorized.",
+    "precision": 0.6666666666666666,
+    "cobertura": 0.8888888888888888,
+    "f1": 0.761904761904762
+  },
+  {
+    "consulta": "¿Qué es la partición de equivalencia?",
+    "respuesta": "La partición de equivalencia es una técnica de prueba de software de caja negra que divide el dominio de entrada en clases de datos de las cuales se espera que los casos de prueba deriven el mismo comportamiento.",
+    "precision": 0.21052631578947367,
+    "cobertura": 0.4444444444444444,
+    "f1": 0.2857142857142857
+  },
+  {
+    "consulta": "¿Qué es la prueba de regresión?",
+    "respuesta": "La prueba de regresión es un tipo de prueba de software que se ejecuta para verificar que los cambios recientes, como correcciones de errores o nuevas funcionalidades, no hayan afectado negativamente el funcionamiento existente del sistema.",
+    "precision": 0.25,
+    "cobertura": 0.5625,
+    "f1": 0.34615384615384615
+  },
+  {
+    "consulta": "¿Qué es la prueba de confirmación?",
+    "respuesta": "La prueba de confirmación es aquella que se ejecuta para verificar que un defecto detectado previamente ha sido corregido de manera exitosa.",
+    "precision": 0.36363636363636365,
+    "cobertura": 0.6666666666666666,
+    "f1": 0.4705882352941177
+  },
+  {
+    "consulta": "¿Qué es el análisis de valores límite?",
+    "respuesta": "El análisis de valores límite es una técnica de prueba de caja negra que se centra en evaluar los valores mínimos, máximos y adyacentes de las entradas para detectar errores en los límites de partición.",
+    "precision": 0.34285714285714286,
+    "cobertura": 0.6666666666666666,
+    "f1": 0.4528301886792453
+  },
+  {
+    "consulta": "¿Qué es la trazabilidad en las pruebas?",
+    "respuesta": "La trazabilidad en las pruebas es la capacidad de vincular cada requisito del software con sus respectivos casos de prueba y defectos para garantizar una cobertura completa del sistema.",
+    "precision": 0.3793103448275862,
+    "cobertura": 0.55,
+    "f1": 0.4489795918367347
+  },
+  {
+    "consulta": "¿Qué es un criterio de aceptación?",
+    "respuesta": "Un criterio de aceptación es una condición específica que un sistema debe cumplir para que los usuarios y analistas validen que una funcionalidad opera correctamente según los requisitos establecidos.",
+    "precision": 0.3103448275862069,
+    "cobertura": 0.5,
+    "f1": 0.3829787234042554
+  },
+  {
+    "consulta": "¿Qué código HTTP indica que el cliente superó el límite de solicitudes?",
+    "respuesta": "El código HTTP que indica que el cliente superó el límite de solicitudes es el 429 Too Many Requests.",
+    "precision": 0.631578947368421,
+    "cobertura": 0.9230769230769231,
+    "f1": 0.7499999999999999
+  },
+  {
+    "consulta": "¿Qué código HTTP devuelve FastAPI cuando la entrada no cumple el schema?",
+    "respuesta": "FastAPI devuelve el código HTTP 422 Unprocessable Entity cuando la entrada no cumple con el schema establecido.",
+    "precision": 0.5294117647058824,
+    "cobertura": 0.6923076923076923,
+    "f1": 0.5999999999999999
+  },
+  {
+    "consulta": "¿Cuántos principios del testing define el ISTQB?",
+    "respuesta": "El ISTQB define exactamente siete principios del testing.",
+    "precision": 0.75,
+    "cobertura": 0.6666666666666666,
+    "f1": 0.7058823529411765
+  },
+  {
+    "consulta": "¿Cuántos valores se prueban por borde en el 3-value BVA?",
+    "respuesta": "En el 3-value BVA se prueban exactamente tres valores por cada borde: el valor límite inferior, el valor nominal y el valor límite superior.",
+    "precision": 0.375,
+    "cobertura": 0.5,
+    "f1": 0.42857142857142855
+  },
+  {
+    "consulta": "¿El testing puede demostrar que un sistema no tiene defectos?",
+    "respuesta": "No, el testing solo puede mostrar la presencia de defectos pero no puede demostrar su ausencia total.",
+    "precision": 0.7647058823529411,
+    "cobertura": 0.9285714285714286,
+    "f1": 0.8387096774193549
+  },
+  {
+    "consulta": "¿Se pueden probar todas las combinaciones de entrada de un sistema?",
+    "respuesta": "No se pueden probar todas las combinaciones de entrada de un sistema debido a que el número de casos posibles suele ser infinitamente grande y el tiempo y los recursos son limitados, por lo que se deben utilizar técnicas como partición de equivalencia y análisis de valores límite para seleccionar un subconjunto representativo.",
+    "precision": 0.1320754716981132,
+    "cobertura": 0.4117647058823529,
+    "f1": 0.2
+  },
+  {
+    "consulta": "¿El 100 % de cobertura de sentencias implica 100 % de cobertura de ramas?",
+    "respuesta": "No, el ciento por ciento de cobertura de sentencias no implica necesariamente el ciento por ciento de cobertura de ramas, ya que una sentencia puede ejecutarse sin evaluar todas las posibles bifurcaciones lógicas que contiene.",
+    "precision": 0.2857142857142857,
+    "cobertura": 0.625,
+    "f1": 0.392156862745098
+  },
+  {
+    "consulta": "¿Qué es la Definition of Done?",
+    "respuesta": "La Definition of Done es un acuerdo compartido y transparente sobre los criterios de calidad que un incremento de software debe cumplir para considerarse completamente terminado y listo para su entrega.",
+    "precision": 0.2903225806451613,
+    "cobertura": 0.5,
+    "f1": 0.3673469387755102
+  },
+  {
+    "consulta": "¿Qué es una prueba de caja blanca?",
+    "respuesta": "Una prueba de caja blanca es una técnica de validación de software donde el evaluador analiza la estructura interna, el código fuente y la lógica del programa para verificar su correcto funcionamiento a nivel de implementación.",
+    "precision": 0.3333333333333333,
+    "cobertura": 0.75,
+    "f1": 0.46153846153846156
+  },
+  {
+    "consulta": "¿Qué es el error guessing?",
+    "respuesta": "El error guessing es una técnica de prueba basada en la experiencia donde el evaluador anticipa fallos probables en el software basándose en su intuición y en errores comunes del pasado.",
+    "precision": 0.3548387096774194,
+    "cobertura": 0.55,
+    "f1": 0.43137254901960786
+  },
+  {
+    "consulta": "¿Cuáles son los niveles de prueba del ISTQB?",
+    "respuesta": "Los niveles de prueba definidos por el ISTQB son cuatro: pruebas de componentes, de integración, de sistema y de aceptación.",
+    "precision": 0.6,
+    "cobertura": 0.8,
+    "f1": 0.6857142857142857
+  },
+  {
+    "consulta": "¿Cuáles son los criterios de cobertura de la transición de estados?",
+    "respuesta": "Los criterios de cobertura de la transición de estados incluyen la cobertura de todos los estados, la cobertura de todas las transiciones válidas y la cobertura de todas las secuencias de transiciones o pares de estados conectados.",
+    "precision": 0.2972972972972973,
+    "cobertura": 0.9166666666666666,
+    "f1": 0.4489795918367347
+  }
+]
