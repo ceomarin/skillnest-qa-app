@@ -50,19 +50,19 @@ def construir_cadena(modelo):
     )
 
     return (
-        plantilla_estructura
-        | modelo
-        | StrOutputParser()
+        plantilla_estructura | modelo| StrOutputParser() | _ver("Salida paso 1")
         | (lambda hu_estructurada: {"hu_estructurada": hu_estructurada})
-        | plantilla_casos
-        | modelo
-        | StrOutputParser()
+        | plantilla_casos | modelo | StrOutputParser() | _ver("Salida paso 2")
         | (lambda casos: {"casos": casos})
-        | plantilla_formato
-        | modelo
-        | StrOutputParser()
+        | plantilla_formato | modelo | StrOutputParser() | _ver("Salida paso 3")
     )
 
+def _ver(etiqueta):
+    """Imprime lo que sale del paso anterior y lo deja pasar sin modificarlo."""
+    def paso(valor):
+        print(f"--- {etiqueta} ---\n{valor}\n")
+        return valor
+    return paso
 
 if __name__ == "__main__":
     load_dotenv()
