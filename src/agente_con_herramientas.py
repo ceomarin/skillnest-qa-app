@@ -1,21 +1,30 @@
+import json
 import logging
 import re
+from datetime import datetime, timezone
 from decimal import Decimal
+from pathlib import Path
 
 from dotenv import load_dotenv
 from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
+from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables import RunnableLambda
+from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
+from pydantic import BaseModel, Field
 
 from prompts.banco import HU_EJEMPLO
 
 logger = logging.getLogger(__name__)
 
 NOMBRE_MODELO = "gemini-3.5-flash-lite"
-MAX_ITERACIONES = 4  # el curso deja 15 por defecto; aquí bastan 1 o 2 herramientas
+MAX_ITERACIONES = 4  
 MAX_SEGUNDOS = 60
+TIMEOUT_MODELO_SEGUNDOS = 20
 MENSAJE_ERROR_AGENTE = "No pude responder en este momento. Intenta de nuevo más tarde."
+RUTA_TRAZAS = Path(__file__).resolve().parent.parent / "logs" / "trazas_agente.jsonl"
 
 INSTRUCCIONES_SISTEMA = (
     "Eres un copiloto de QA. Ayudas a un analista a diseñar pruebas para la "
@@ -31,6 +40,7 @@ INSTRUCCIONES_SISTEMA = (
 
 PROMPT_AGENTE = ChatPromptTemplate.from_messages([
     ("system", INSTRUCCIONES_SISTEMA + "\n\n<hu>\n{hu}\n</hu>"),
+    MessagesPlaceholder("chat_history"),  # turnos anteriores de la sesión
     ("human", "{entrada}"),
     MessagesPlaceholder("agent_scratchpad"),
 ])
@@ -107,7 +117,33 @@ def extraer_texto(salida):
 # Herramientas: envoltorios finos que devuelven texto para el agente
 # ---------------------------------------------------------------------------
 
-@tool
+class ArgumentosValoresFrontera(BaseModel):
+    """Esquema de argumentos: lo que el modelo lee para llenar cada campo."""
+
+    limite_superior: float | None = Field(
+        default=None,
+        description=(
+            "Tope máximo que declara el criterio, por ejemplo 30 para "
+            "'no puede superar 30'. Omitir si el criterio no lo menciona."
+        ),
+    )
+    limite_inferior: float | None = Field(
+        default=None,
+        description=(
+            "Mínimo que declara el criterio, por ejemplo 50 para "
+            "'al menos 50'. Omitir si el criterio no lo menciona."
+        ),
+    )
+    paso: float = Field(
+        default=1,
+        description=(
+            "Distancia entre valores vecinos al borde, por ejemplo 0.01 "
+            "para importes con centavos. Por defecto 1."
+        ),
+    )
+
+
+@tool("calcular_valores_frontera", args_schema=ArgumentosValoresFrontera)
 def calcular_valores_frontera(
     limite_superior: float | None = None,
     limite_inferior: float | None = None,
@@ -152,12 +188,48 @@ def crear_verificar_cita(hu):
 # Agente
 # ---------------------------------------------------------------------------
 
+# Memoria por sesión. Vive en el proceso: se pierde al reiniciar y crece con
+# cada turno (cada turno reenvía todo el historial al modelo).
+historiales = {}
+
+
+def obtener_historial(session_id):
+    if session_id not in historiales:
+        historiales[session_id] = InMemoryChatMessageHistory()
+    return historiales[session_id]
+
+
+def cerrar_sesion(session_id):
+    """Libera el historial de una sesión. Seguro si la sesión no existe."""
+    historiales.pop(session_id, None)
+
+
+def _normalizar_salida(resultado):
+    # Gemini puede devolver `output` como lista de bloques; el historial
+    # necesita texto para guardar el turno.
+    return {**resultado, "output": extraer_texto(resultado["output"])}
+
+
+def con_memoria(ejecutor):
+    """Envuelve un ejecutor para que recuerde los turnos de cada sesión."""
+    return RunnableWithMessageHistory(
+        ejecutor | RunnableLambda(_normalizar_salida),
+        obtener_historial,
+        input_messages_key="entrada",
+        history_messages_key="chat_history",
+    )
+
+
 def construir_agente(modelo, hu, verbose=False):
-    """Devuelve el AgentExecutor, sin ejecutarlo. El modelo entra por parámetro."""
+    """Devuelve el agente con memoria por sesión, sin ejecutarlo.
+
+    El modelo entra por parámetro. Cada `invoke` exige `session_id` en la
+    config: usa `consultar_agente`, que se lo pasa.
+    """
     herramientas = [calcular_valores_frontera, crear_verificar_cita(hu)]
     prompt = PROMPT_AGENTE.partial(hu=hu)
     agente = create_tool_calling_agent(modelo, herramientas, prompt)
-    return AgentExecutor(
+    ejecutor = AgentExecutor(
         agent=agente,
         tools=herramientas,
         verbose=verbose,
@@ -165,12 +237,14 @@ def construir_agente(modelo, hu, verbose=False):
         max_iterations=MAX_ITERACIONES,
         max_execution_time=MAX_SEGUNDOS,
     )
+    return con_memoria(ejecutor)
 
 
-def consultar_agente(ejecutor, entrada):
+def consultar_agente(ejecutor, entrada, session_id):
     """Red de seguridad: un fallo del proveedor no tumba el script."""
+    config = {"configurable": {"session_id": session_id}}
     try:
-        resultado = ejecutor.invoke({"entrada": entrada})
+        resultado = ejecutor.invoke({"entrada": entrada}, config)
     except Exception:
         logger.exception("Error al consultar el agente")
         return {"output": MENSAJE_ERROR_AGENTE, "intermediate_steps": [], "error": True}
@@ -181,21 +255,54 @@ def consultar_agente(ejecutor, entrada):
     }
 
 
+def registrar_traza(session_id, entrada, resultado, ruta=RUTA_TRAZAS):
+    """Agrega una interacción del agente como una línea JSON en `ruta`.
+
+    Guarda qué se preguntó, qué herramientas se usaron (con argumentos y
+    observación) y la respuesta final. Si `resultado` no trae
+    `intermediate_steps`, `acciones` queda como lista vacía en vez de fallar.
+    """
+    registro = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "session_id": session_id,
+        "entrada": entrada,
+        "acciones": [
+            {
+                "herramienta": accion.tool,
+                "argumentos": accion.tool_input,
+                "observacion": observacion,
+            }
+            for accion, observacion in resultado.get("intermediate_steps", [])
+        ],
+        "respuesta_final": resultado["output"],
+    }
+    ruta = Path(ruta)
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    with open(ruta, "a", encoding="utf-8") as archivo:
+        archivo.write(json.dumps(registro, ensure_ascii=False) + "\n")
+
+
 if __name__ == "__main__":
     load_dotenv()
-    modelo = ChatGoogleGenerativeAI(model=NOMBRE_MODELO, temperature=0)
+    modelo = ChatGoogleGenerativeAI(
+        model=NOMBRE_MODELO, temperature=0, timeout=TIMEOUT_MODELO_SEGUNDOS
+    )
     ejecutor = construir_agente(modelo, HU_EJEMPLO, verbose=True)
+    SESION = "demo"
 
     preguntas = [
         # Debe usar calcular_valores_frontera
         "¿Qué valores pruebo en el tope de descuento del 30 %, con paso de 0.01?",
+        # Seguimiento: solo se entiende gracias a la memoria de la sesión
+        "¿Y si el paso fuera 0.1?",
         # Debe usar verificar_cita
         "¿La historia dice 'Solo se admite un cupón por pedido'?",
         # Fuera de alcance: sin herramientas
         "¿Qué es LangChain?",
     ]
     for pregunta in preguntas:
-        resultado = consultar_agente(ejecutor, pregunta)
+        resultado = consultar_agente(ejecutor, pregunta, SESION)
+        registrar_traza(SESION, pregunta, resultado)
         print(f"\n=== {pregunta}")
         for accion, observacion in resultado["intermediate_steps"]:
             print(accion.tool, accion.tool_input, "->", observacion)
