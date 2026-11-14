@@ -52,3 +52,7 @@ evaluacion/
 /test_consumir_gemini_mvp.py
 docs/gates-oraculos/
 src/curso
+./chroma_db/*
+/chroma_db/
+/src/vectorstore/
+/vectorstore/
