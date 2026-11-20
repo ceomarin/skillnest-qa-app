@@ -54,5 +54,6 @@ docs/gates-oraculos/
 src/curso
 ./chroma_db/*
 /chroma_db/
+/chunking_db/
 /src/vectorstore/
 /vectorstore/
