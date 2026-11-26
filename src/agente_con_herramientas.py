@@ -1,7 +1,7 @@
 import json
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -263,7 +263,7 @@ def registrar_traza(session_id, entrada, resultado, ruta=RUTA_TRAZAS):
     `intermediate_steps`, `acciones` queda como lista vacía en vez de fallar.
     """
     registro = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "session_id": session_id,
         "entrada": entrada,
         "acciones": [

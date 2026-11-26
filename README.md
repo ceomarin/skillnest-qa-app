@@ -176,6 +176,7 @@ python -m pytest test_gate2.py -v      # 4 pruebas del Gate 2, contra la API rea
 - Entorno: venv nuevo con Python 3.13.16, instalado solo con `pip install -r requirements-dev.txt` (que incluye `requirements.txt`)
 - Resultado: la instalación terminó sin errores, `pytest --ignore=test_gate2.py` aprobó 62 pruebas, todos los módulos se importan y `python src/verificar_entorno.py` respondió `Entorno listo para la corrida final`
 - Corrida real (entorno de desarrollo): `python src/servicio_rag.py` respondió con 2 fuentes citadas, y la supervisión pausó y aprobó; `python -m pytest test_gate2.py -v` aprobó las 4 pruebas
+- Ensayo desde un clon limpio (commit `b3483ea`, sin `.env` ni índice), siguiendo solo este README: `pip install -r requirements.txt` terminó sin errores; `verificar_entorno.py` informó `Pendiente: carpeta del índice vectorstore/` (código 1); `indexar_corpus.py` indexó 25 de 25 chunks; `verificar_entorno.py` respondió `Entorno listo para la corrida final`; `servicio_rag.py` respondió con 2 fuentes citadas, la supervisión pausó y aprobó, y terminó con código 0. Con `requirements-dev.txt`, `pytest --ignore=test_gate2.py` aprobó 62 pruebas y `git status` quedó limpio
 
 ## Registro del ensayo de rate limit
  

@@ -1,7 +1,9 @@
-import time
 import random
+import time
+from collections.abc import Callable
+from typing import Any
+
 import requests
-from typing import Callable, Any
 
 from src.consumir_gemini import armar_peticion, extraer_texto
 

@@ -1,6 +1,7 @@
 import re
 from collections import Counter
 
+
 def limpiar_texto(texto: str) -> str:
     """Normaliza el texto: minúsculas y sin puntuación."""
     if not isinstance(texto, str):
@@ -23,10 +24,6 @@ def procesar_texto(texto: str) -> list[str]:
 def vectorizar(tokens: list[str]) -> Counter:
     """Cuenta cuántas veces aparece cada token."""
     return Counter(tokens)
-
-def procesar_texto(texto):
-    texto_limpio = limpiar_texto(texto)
-    return tokenizar(texto_limpio)
 
 if __name__ == "__main__":
     texto = "El gato, el perro y el gato corren."  

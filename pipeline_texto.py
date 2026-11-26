@@ -1,4 +1,5 @@
 import re
+
 from cliente import consultar_modelo
 
 CASOS = [

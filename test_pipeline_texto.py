@@ -2,7 +2,6 @@ import pytest
 
 from pipeline_texto import limpiar_texto, procesar_texto
 
-
 # --- procesar_texto ---
 
 def test_procesar_texto_normaliza_mayusculas_y_puntuacion():

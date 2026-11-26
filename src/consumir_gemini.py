@@ -124,7 +124,8 @@ def parsear_respuesta_json(texto, claves_rqueridas=None):
         raise ValueError("La repuesta del modelo no es JSON válido")
 
     if not isinstance(datos, dict):
-        raise ValueError("La respuesta del modelo no es un objeto JSON.")
+        # prompts/test_consistencia.py cuenta los fallos capturando ValueError.
+        raise ValueError("La respuesta del modelo no es un objeto JSON.")  # noqa: TRY004
 
     if claves_rqueridas:
         faltantes = [clave for clave in claves_rqueridas if clave not in datos]

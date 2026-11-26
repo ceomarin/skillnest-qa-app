@@ -16,6 +16,7 @@ sys.path.insert(0, str(CARPETA))
 sys.path.insert(0, str(CARPETA.parent))
 
 from banco import BANCO_DE_PROMPTS
+
 from cliente import consultar_modelo
 from src.consumir_gemini import parsear_respuesta_json
 

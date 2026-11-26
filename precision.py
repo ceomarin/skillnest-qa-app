@@ -1,15 +1,15 @@
 import json
 from collections import Counter
-from cliente import consultar_modelo
-from pipeline_texto import procesar_texto 
 
+from cliente import consultar_modelo
+from pipeline_texto import procesar_texto
 
 CASOS = [
     # 1-3: definiciones (ya existentes)
     (
         "¿Qué es una historia de usuario?",
-        "Una historia de usuario describe una necesidad con un rol, "
-        "un objetivo y un beneficio.",
+        ("Una historia de usuario describe una necesidad con un rol, "
+        "un objetivo y un beneficio."),
     ),
     (
         "¿Qué código HTTP indica una credencial inválida?",
@@ -17,40 +17,40 @@ CASOS = [
     ),
     (
         "¿Qué es la partición de equivalencia?",
-        "La partición de equivalencia agrupa valores que el sistema "
-        "trata igual y prueba un valor de cada grupo.",
+        ("La partición de equivalencia agrupa valores que el sistema "
+        "trata igual y prueba un valor de cada grupo."),
     ),
     # 4-8: definiciones
     (
         "¿Qué es la prueba de regresión?",
-        "La prueba de regresión verifica que un cambio no haya roto "
-        "el comportamiento que ya funcionaba.",
+        ("La prueba de regresión verifica que un cambio no haya roto "
+        "el comportamiento que ya funcionaba."),
     ),
     (
         "¿Qué es la prueba de confirmación?",
-        "La prueba de confirmación verifica que un defecto reportado "
-        "ya fue corregido.",
+        ("La prueba de confirmación verifica que un defecto reportado "
+        "ya fue corregido."),
     ),
     (
         "¿Qué es el análisis de valores límite?",
-        "El análisis de valores límite prueba los bordes de cada partición, "
-        "donde se concentran los errores por uno.",
+        ("El análisis de valores límite prueba los bordes de cada partición, "
+        "donde se concentran los errores por uno."),
     ),
     (
         "¿Qué es la trazabilidad en las pruebas?",
-        "La trazabilidad vincula requisitos, casos de prueba, resultados y "
-        "defectos para evaluar la cobertura y el impacto de los cambios.",
+        ("La trazabilidad vincula requisitos, casos de prueba, resultados y "
+        "defectos para evaluar la cobertura y el impacto de los cambios."),
     ),
     (
         "¿Qué es un criterio de aceptación?",
-        "Un criterio de aceptación define las condiciones que debe cumplir "
-        "una historia de usuario para darse por terminada.",
+        ("Un criterio de aceptación define las condiciones que debe cumplir "
+        "una historia de usuario para darse por terminada."),
     ),
     # 9-12: dato concreto
     (
         "¿Qué código HTTP indica que el cliente superó el límite de solicitudes?",
-        "El código 429 indica que el cliente superó el límite de "
-        "solicitudes permitidas.",
+        ("El código 429 indica que el cliente superó el límite de "
+        "solicitudes permitidas."),
     ),
     (
         "¿Qué código HTTP devuelve FastAPI cuando la entrada no cumple el schema?",
@@ -62,51 +62,51 @@ CASOS = [
     ),
     (
         "¿Cuántos valores se prueban por borde en el 3-value BVA?",
-        "El 3-value BVA prueba el valor del borde y sus dos vecinos, "
-        "es decir, 3 valores por borde.",
+        ("El 3-value BVA prueba el valor del borde y sus dos vecinos, "
+        "es decir, 3 valores por borde."),
     ),
     # 13-15: negación
     (
         "¿El testing puede demostrar que un sistema no tiene defectos?",
-        "No, el testing muestra la presencia de defectos, pero no puede "
-        "demostrar su ausencia.",
+        ("No, el testing muestra la presencia de defectos, pero no puede "
+        "demostrar su ausencia."),
     ),
     (
         "¿Se pueden probar todas las combinaciones de entrada de un sistema?",
-        "No, el testing exhaustivo es imposible salvo en casos triviales; "
-        "se usan técnicas y priorización por riesgo.",
+        ("No, el testing exhaustivo es imposible salvo en casos triviales; "
+        "se usan técnicas y priorización por riesgo."),
     ),
     (
         "¿El 100 % de cobertura de sentencias implica 100 % de cobertura de ramas?",
-        "No, el 100 % de cobertura de sentencias no implica 100 % de ramas, "
-        "pero al revés sí.",
+        ("No, el 100 % de cobertura de sentencias no implica 100 % de ramas, "
+        "pero al revés sí."),
     ),
     # 16-18: sinónimos habituales
     (
         "¿Qué es la Definition of Done?",
-        "La Definition of Done lista los criterios de salida que deben "
-        "cumplirse para dar una actividad por terminada.",
+        ("La Definition of Done lista los criterios de salida que deben "
+        "cumplirse para dar una actividad por terminada."),
     ),
     (
         "¿Qué es una prueba de caja blanca?",
-        "La prueba de caja blanca deriva los casos de prueba de la "
-        "estructura interna del código.",
+        ("La prueba de caja blanca deriva los casos de prueba de la "
+        "estructura interna del código."),
     ),
     (
         "¿Qué es el error guessing?",
-        "El error guessing anticipa posibles defectos a partir de la "
-        "experiencia del tester y diseña una prueba para cada falla.",
+        ("El error guessing anticipa posibles defectos a partir de la "
+        "experiencia del tester y diseña una prueba para cada falla."),
     ),
     # 19-20: listas
     (
         "¿Cuáles son los niveles de prueba del ISTQB?",
-        "Los niveles de prueba son componente, integración de componentes, "
-        "sistema, integración de sistemas y aceptación.",
+        ("Los niveles de prueba son componente, integración de componentes, "
+        "sistema, integración de sistemas y aceptación."),
     ),
     (
         "¿Cuáles son los criterios de cobertura de la transición de estados?",
-        "Los criterios son todos los estados, transiciones válidas y "
-        "todas las transiciones.",
+        ("Los criterios son todos los estados, transiciones válidas y "
+        "todas las transiciones."),
     ),
 ]
 
@@ -240,8 +240,7 @@ def guardar_muestra_para_revisar(
     muestra_para_revisar = peores_casos[:5] + peores_casos[-5:]
 
     with open(ruta, "w", encoding="utf-8") as archivo:
-        for caso in muestra_para_revisar:
-            archivo.write(f"{caso['consulta']} {caso['f1']:.2f}\n")
+        archivo.writelines(f"{caso['consulta']} {caso['f1']:.2f}\n" for caso in muestra_para_revisar)
 
 
 

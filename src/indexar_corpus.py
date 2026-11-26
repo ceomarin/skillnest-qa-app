@@ -77,7 +77,7 @@ def indexar(vectorstore, chunks, ids, tamano_lote=TAMANO_LOTE):
         ids_lote = ids[inicio:inicio + tamano_lote]
         try:
             vectorstore.add_documents(documents=lote, ids=ids_lote)
-        except Exception as error:
+        except Exception as error:  # noqa: BLE001 - se informa el lote que falló, sin Traceback
             mensaje = str(error)
             if "429" in mensaje or "RESOURCE_EXHAUSTED" in mensaje:
                 print("Límite de peticiones alcanzado. Espera un minuto y vuelve a ejecutar.")
