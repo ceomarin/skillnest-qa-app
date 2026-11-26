@@ -1,6 +1,6 @@
 # skillnest-qa-app
 
-Miniaplicación en Python que consume la API de Gemini (`generateContent`) para estructurar y analizar historias de usuario con salida JSON validada. Es el proyecto del Módulo 1 de la *Especialización en Desarrollo con IA Generativa*.
+Miniaplicación en Python que consume la API de Gemini (`generateContent`) para estructurar y analizar historias de usuario con salida JSON validada. Es el proyecto del Módulo 1 de la *Especialización en Desarrollo con IA Generativa*. El Módulo 2 agrega un servicio RAG sobre un corpus sintético, con citas validadas por código, logs sin contenido sensible y supervisión humana (ver [Servicio RAG de punta a punta](#servicio-rag-de-punta-a-punta)).
 
 ## Qué hace
 
@@ -65,16 +65,93 @@ python prompts/test_consistencia.py
 
 Ejecuta cada prompt del banco 3 veces contra la API real (9 llamadas, consumen cuota) y guarda el resultado en `prompts/registro_resultados.json`. Mide que la salida sea JSON con las claves esperadas; **no evalúa la calidad del contenido**.
 
+## Servicio RAG de punta a punta
+
+Responde preguntas sobre `corpus/reservas/`: 9 documentos sintéticos con las reglas de un sistema de reservas de salas. Cada respuesta cita los fragmentos que la respaldan. Si ninguna cita es válida, responde que no tiene información suficiente y no entrega fuentes.
+
+Requiere la [instalación](#instalación) y la [configuración](#configuración) de arriba. Ejecuta todo desde la raíz del repositorio.
+
+**1. Indexar el corpus** (consume 25 embeddings):
+
+```bash
+python src/indexar_corpus.py
+```
+
+```text
+9 documentos -> 25 chunks
+Indexados 25 de 25 chunks
+Total en la colección: 25
+```
+
+El índice queda en `vectorstore/`, que no se versiona. Volver a ejecutarlo recalcula los 25 embeddings, pero no duplica chunks, porque cada uno tiene un id estable.
+
+**2. Verificar el entorno** (no llama a la API):
+
+```bash
+python src/verificar_entorno.py
+```
+
+Revisa los paquetes, que `GEMINI_API_KEY` esté definida (sin imprimirla) y que exista el índice. Debe terminar con `Entorno listo para la corrida final`. Si falta algo, imprime `Pendiente: ...` y termina con código 1.
+
+**3. Consultar** (1 embedding y 1 generación):
+
+```bash
+python src/servicio_rag.py
+```
+
+Hace una pregunta de ejemplo. Primero imprime los logs JSON, uno por etapa y todos con el mismo `trace_id`. Los logs solo llevan longitudes, ids, conteos y tokens; nunca la pregunta, los fragmentos ni la respuesta. Luego imprime el resultado y pasa la respuesta por la aprobación humana:
+
+```text
+Estado: respondida
+Respuesta: ... [cancelacion-penalizaciones.md#0][glosario.md#2].
+Fuentes: ['cancelacion-penalizaciones.md#0', 'glosario.md#2']
+Prompt: <huella del prompt> · <trace_id>
+Supervisión pausada: True
+Estado final: aprobado
+Proceso terminado sin errores.
+```
+
+Las fuentes pueden variar entre corridas. Si falta la clave, no hay red o el proveedor limita las peticiones, el servicio informa el estado y termina con código 1, sin un `Traceback`.
+
+Para hacer otra pregunta, usa `ejecutar_servicio`, que devuelve `(respuesta, fuentes)`:
+
+```bash
+python -c "import sys; sys.path.insert(0, 'src'); from servicio_rag import ejecutar_servicio; print(ejecutar_servicio('Cuantas horas antes se puede cancelar sin penalizacion?'))"
+```
+
+## Pruebas
+
+Necesitan las dependencias de desarrollo (`pip install -r requirements-dev.txt`).
+
+```bash
+pytest --ignore=test_gate2.py          # suite sin red: la API se sustituye por dobles
+python -m pytest test_gate2.py -v      # 4 pruebas del Gate 2, contra la API real
+```
+
+`test_gate2.py` comprueba los cuatro criterios del Gate 2: el servicio responde sin excepciones, la respuesta cita su fuente, los logs no contienen la pregunta ni un correo de prueba, y la supervisión humana pausa y reanuda. Las tres primeras pruebas gastan 1 embedding y 1 generación cada una, y necesitan la clave y el índice. `pytest` sin argumentos también las ejecuta.
+
 ## Estructura
 
 | Ruta | Contenido |
 |---|---|
-| `src/consumir_gemini.py` | Cliente de la API y flujo principal |
+| `src/consumir_gemini.py` | Cliente de la API y flujo principal (Módulo 1) |
+| `cliente.py` | Cliente con errores tipados, reintentos con backoff y costo acumulado |
 | `prompts/banco.py` | Prompts, esquemas de salida y ejemplos sintéticos |
 | `prompts/test_consistencia.py` | Prueba de consistencia contra la API real |
 | `prompts/registro_resultados.json` | Último resultado de la prueba |
+| `src/cadena_tres_pasos.py`, `src/enrutamiento.py`, `src/agente_con_herramientas.py` | Chain, enrutamiento y agente con LangChain |
+| `corpus/reservas/` | Corpus sintético del servicio RAG |
+| `src/indexar_corpus.py` | Chunking, embeddings e índice Chroma en `vectorstore/` |
+| `src/recuperar_corpus.py` | Recuperación con contexto numerado y citas |
+| `src/servicio_rag.py` | Servicio integrado: recupera, filtra la inyección, valida las citas y entrega la respuesta con sus fuentes |
+| `src/logging_rag.py` | Logs JSON con `trace_id`, sin contenido sensible, y filtro de inyección |
+| `src/registro_prompts.py` | Versiones del prompt con su huella |
+| `src/grafo_supervision.py` | Aprobación humana con `interrupt()` y `Command` |
+| `src/matriz_riesgos.py` | Matriz de riesgos del servicio |
+| `src/verificar_entorno.py` | Revisión del entorno antes de la corrida |
+| `test_gate2.py` | Pruebas del Gate 2, contra la API real |
+| `test_*.py` (raíz), `src/test_*.py`, `tests/` | Pruebas automáticas sin red |
 | `docs/` | Decisión de arquitectura, diagrama y evidencias |
-| `tests/` | Reservado para pruebas automáticas |
 | `requirements.txt` | Dependencias de ejecución, con versiones fijadas |
 | `requirements-dev.txt` | Dependencias de desarrollo |
 
@@ -92,6 +169,13 @@ Ejecuta cada prompt del banco 3 veces contra la API real (9 llamadas, consumen c
  
 - Fecha: 2026-10-23
 - Resultado tras la corrección: el proyecto corre sin intervención manual
+
+## Registro del ensayo de instalación limpia del Gate 2
+
+- Fecha: 2026-11-26
+- Entorno: venv nuevo con Python 3.13.16, instalado solo con `pip install -r requirements-dev.txt` (que incluye `requirements.txt`)
+- Resultado: la instalación terminó sin errores, `pytest --ignore=test_gate2.py` aprobó 62 pruebas, todos los módulos se importan y `python src/verificar_entorno.py` respondió `Entorno listo para la corrida final`
+- Corrida real (entorno de desarrollo): `python src/servicio_rag.py` respondió con 2 fuentes citadas, y la supervisión pausó y aprobó; `python -m pytest test_gate2.py -v` aprobó las 4 pruebas
 
 ## Registro del ensayo de rate limit
  
